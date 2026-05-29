@@ -1679,9 +1679,8 @@ function renderHesap() {
   var hasWinLoss = D.winLoss && Object.keys(D.winLoss).length > 0;
 
   if (!hasInitLdg) {
-    // Form: havuzdaki oyuncular için tutar gir
-    var initHtml = '<div class="card" style="margin-bottom:0"><div class="ctitle">Baslangic Tutari Gir</div>';
-    initHtml += '<p style="font-size:.76rem;color:var(--tx3);margin-bottom:12px">Bir kereye mahsus: her oyuncu icin mevcut tutari girin. Sonraki oyunlar bunun uzerine eklenir.</p>';
+    var initHtml = '<div class="card" style="margin-bottom:0"><div class="ctitle">Başlangıç Tutarı Gir</div>';
+    initHtml += '<p style="font-size:.76rem;color:var(--tx3);margin-bottom:12px">Opsiyonel: Uygulamadan önce oynanan oyunların tutarlarını girin. Boş bırakabilirsiniz.</p>';
     initHtml += '<div id="init-inputs">';
     for (var pi7 = 0; pi7 < D.pool.length; pi7++) {
       var pn = D.pool[pi7];
@@ -1691,25 +1690,17 @@ function renderHesap() {
       initHtml += '</div>';
     }
     initHtml += '</div>';
-    initHtml += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)">';
-    initHtml += '<p style="font-size:.76rem;color:var(--tx3);margin-bottom:10px">Win/Loss gecmisi (opsiyonel):</p>';
-    for (var pi10 = 0; pi10 < D.pool.length; pi10++) {
-      var pn2 = D.pool[pi10];
-      initHtml += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:7px">';
-      initHtml += '<label style="min-width:80px;font-size:.82rem;font-weight:500">' + pn2 + '</label>';
-      initHtml += '<input type="number" id="initw-' + pi10 + '" placeholder="W" style="width:60px;padding:7px;border:1.5px solid var(--bd2);border-radius:7px;font-size:.85rem;font-family:inherit;outline:none;text-align:center">';
-      initHtml += '<input type="number" id="initl-' + pi10 + '" placeholder="L" style="width:60px;padding:7px;border:1.5px solid var(--bd2);border-radius:7px;font-size:.85rem;font-family:inherit;outline:none;text-align:center">';
-      initHtml += '</div>';
-    }
+    initHtml += '<div style="display:flex;gap:8px;margin-top:10px">';
+    initHtml += '<button onclick="saveInitLdg()" class="btn bp">Kaydet</button>';
+    initHtml += '<button onclick="document.getElementById(\'h-init\').innerHTML=\'\'" class="btn bo">Atla</button>';
     initHtml += '</div>';
-    initHtml += '<button onclick="saveInitLdg()" class="btn bp bfw" style="margin-top:10px">Kaydet</button>';
     initHtml += '</div>';
     initEl.innerHTML = initHtml;
   } else {
-    initEl.innerHTML = '<div style="font-size:.72rem;color:var(--tx3);margin-bottom:8px;padding:8px 12px;background:var(--bg2);border-radius:8px">Baslangic tutarlari kaydedildi. Degistirmek icin verileri sifirlayin.</div>';
+    initEl.innerHTML = '<div style="font-size:.72rem;color:var(--tx3);margin-bottom:8px;padding:8px 12px;background:var(--bg2);border-radius:8px">Başlangıç tutarları kaydedildi.</div>';
   }
 
-  // W/L başlangıç formu - initialLdg olsa da olmasa da göster (henüz girilmediyse)
+  // W/L formu - ayrı, opsiyonel
   var wlFormEl = document.getElementById('h-wl-form');
   if (!wlFormEl) {
     var wlDiv = document.createElement('div');
@@ -1719,8 +1710,8 @@ function renderHesap() {
     wlFormEl = wlDiv;
   }
   if (!hasWinLoss) {
-    var wlHtml = '<div class="card" style="margin-bottom:0"><div class="ctitle">Gecmis Win/Loss Gir</div>';
-    wlHtml += '<p style="font-size:.76rem;color:var(--tx3);margin-bottom:12px">Bir kereye mahsus: gecmis oturum win/loss degerleri.</p>';
+    var wlHtml = '<div class="card" style="margin-bottom:0"><div class="ctitle">Geçmiş Win/Loss Gir</div>';
+    wlHtml += '<p style="font-size:.76rem;color:var(--tx3);margin-bottom:12px">Opsiyonel: Uygulamadan önce oynanan oturumların W/L değerleri. Boş bırakabilirsiniz.</p>';
     for (var pi11 = 0; pi11 < D.pool.length; pi11++) {
       var pn3 = D.pool[pi11];
       wlHtml += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">';
@@ -1731,11 +1722,14 @@ function renderHesap() {
       wlHtml += '<span style="font-size:.8rem;color:var(--tx3)">L</span>';
       wlHtml += '</div>';
     }
-    wlHtml += '<button onclick="saveInitWL()" class="btn bp bfw" style="margin-top:10px">Kaydet</button>';
+    wlHtml += '<div style="display:flex;gap:8px;margin-top:10px">';
+    wlHtml += '<button onclick="saveInitWL()" class="btn bp">Kaydet</button>';
+    wlHtml += '<button onclick="document.getElementById(\'h-wl-form\').innerHTML=\'\'" class="btn bo">Atla</button>';
+    wlHtml += '</div>';
     wlHtml += '</div>';
     wlFormEl.innerHTML = wlHtml;
   } else {
-    wlFormEl.innerHTML = '<div style="font-size:.72rem;color:var(--tx3);margin-bottom:8px;padding:8px 12px;background:var(--bg2);border-radius:8px">Win/Loss gecmisi kaydedildi.</div>';
+    wlFormEl.innerHTML = '<div style="font-size:.72rem;color:var(--tx3);margin-bottom:8px;padding:8px 12px;background:var(--bg2);border-radius:8px">Win/Loss geçmişi kaydedildi.</div>';
   }
 
   renderArsiv();
