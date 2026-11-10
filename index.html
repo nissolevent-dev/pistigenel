@@ -817,7 +817,7 @@ var REF = db.ref('pisti');
 var KREF = db.ref('pisti_kisiler');
 var AREF = db.ref('pisti_anket');
 var _anketler = {}, _kayitlilar = {};
-var _anketGun = null, _anketSaatAcik = false;
+var _anketGun = null, _anketSaatAcik = false, _anketHepsiniGoster = false;
 var _ANKET_YAZI = { var: 'Var', belki: 'Belli değil', yok: 'Yok' };
 // Varım denince sorulan saatler (çarşamba / cumartesi)
 function _anketSaatleri(gun) {
@@ -891,12 +891,21 @@ function _anketBannerCiz() {
 function anketAc(gun) {
   _anketGun = (gun && /^\d{4}-\d\d-\d\d$/.test(gun)) ? gun : (_aktifAnketGunu() || _tarihStr(_anketOtoFark()));
   _anketSaatAcik = false;
+  _anketHepsiniGoster = false;
   _anketCiz();
   document.getElementById('ov-anket').classList.add('on');
 }
 
+function _secilmisIsimler() {
+  // Başka bir cihazda "Sen kimsin?" bölümünde seçilmiş isimler
+  var s = {};
+  Object.keys(_kayitlilar || {}).forEach(function(k) { if (_kayitlilar[k] && _kayitlilar[k].ad) s[_kayitlilar[k].ad] = true; });
+  return s;
+}
+
 function _oyuncuSecenekleri(secili) {
-  var liste = (D.pool || []).slice();
+  var alinan = _anketHepsiniGoster ? {} : _secilmisIsimler();
+  var liste = (D.pool || []).filter(function(p) { return !alinan[p]; });
   if (secili && liste.indexOf(secili) < 0) liste.push(secili);
   liste.sort(function(a, b) { return a.localeCompare(b, 'tr'); });
   return '<option value="">— seç —</option>' + liste.map(function(p) {
@@ -913,12 +922,16 @@ function _anketCiz() {
   var benC = ben ? s.hepsi[ben] : null;
   var h = '<div style="font-size:.8rem;color:var(--tx3);margin-bottom:12px">' + et.uzun + '</div>';
 
+  var _eskiSel = document.getElementById('anket-ben');
+  var _seciliBen = _eskiSel && _eskiSel.value && (_anketHepsiniGoster || !_secilmisIsimler()[_eskiSel.value]) ? _eskiSel.value : '';
   if (!ben) {
     // Bu cihazın kime ait olduğu bir kez seçilir; herkes yalnızca kendi adına cevap verir
     h += '<div style="padding:12px;border-radius:10px;background:var(--bg2);margin-bottom:14px">' +
       '<div style="font-size:.9rem;font-weight:800;margin-bottom:8px">Sen kimsin?</div>' +
-      '<select id="anket-ben" style="font-size:1rem;margin-bottom:8px">' + _oyuncuSecenekleri('') + '</select>' +
-      '<button class="btn bp bfw" onclick="anketBenKaydet()">Kaydet</button></div>';
+      '<select id="anket-ben" style="font-size:1rem;margin-bottom:8px">' + _oyuncuSecenekleri(_seciliBen) + '</select>' +
+      '<button class="btn bp bfw" onclick="anketBenKaydet()">Kaydet</button>' +
+      (_anketHepsiniGoster ? '' : '<div style="text-align:center;margin-top:8px"><button onclick="anketHepsiniGoster()" style="background:none;border:none;color:var(--tx3);font-size:.75rem;text-decoration:underline;font-family:inherit;cursor:pointer;padding:4px">Adın listede yok mu?</button></div>') +
+      '</div>';
   } else {
     h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
       '<div style="font-size:.95rem;font-weight:800">' + ben + '</div>' +
@@ -1002,16 +1015,29 @@ function anketSaatSec(saat) {
 function anketBenKaydet() {
   var sel = document.getElementById('anket-ben');
   if (!sel || !sel.value) { toast('Listeden adını seç'); return; }
+  if (!_anketHepsiniGoster && _secilmisIsimler()[sel.value]) { toast('Bu isim başka bir cihazda seçilmiş'); _anketCiz(); return; }
+  _anketHepsiniGoster = false;
   _benAyarla(sel.value);
   KREF.child(_anketAnahtar(sel.value)).set({ ad: sel.value, t: Date.now() });
   _anketBannerCiz();
   _anketCiz();
 }
 
+function anketHepsiniGoster() {
+  // Adı başka cihazda seçili görünen kişi (ör. telefon değiştirdiyse) şifreyle tüm listeyi açar
+  sifreSor('Tüm isimleri göstermek için şifre:', function(sifre) {
+    if (sifre !== '1234') { toast('Yanlış şifre'); return; }
+    _anketHepsiniGoster = true;
+    _anketCiz();
+  });
+}
+
 function anketBenDegistir() {
   // Başkası adına cevap verilmesin diye cihazın sahibini değiştirmek şifreli
   sifreSor('Cihazın sahibini değiştirmek için şifre:', function(sifre) {
     if (sifre !== '1234') { toast('Yanlış şifre'); return; }
+    var eskiBen = _benKim();
+    if (eskiBen) KREF.child(_anketAnahtar(eskiBen)).remove();   // isim listede tekrar seçilebilsin
     try { localStorage.removeItem('pisti_genel_ben'); } catch (e) {}
     _anketSaatAcik = false;
     _anketBannerCiz();
